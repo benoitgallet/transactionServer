@@ -10,6 +10,9 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
+/**
+ * @author Krishna Chaitanya Pullela, Manoj Mallidi, Benoit Gallet
+ */
 public class TransactionServer
 {
     private static ServerSocket serverSocket;

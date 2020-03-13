@@ -2,6 +2,9 @@ package Server;
 
 import java.net.Socket;
 
+/**
+ * @author Krishna Chaitanya Pullela, Manoj Mallidi, Benoit Gallet
+ */
 public class TransactionWorker implements Runnable
 {
     private Socket clientSocket;

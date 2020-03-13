@@ -1,12 +1,14 @@
 package Server;
 
-import Transaction.Transaction;
 import Util.Account;
 
 import java.net.Socket;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * @author Krishna Chaitanya Pullela, Manoj Mallidi, Benoit Gallet
+ */
 public class TransactionManager
 {
     private ConcurrentLinkedQueue<Integer> writeSet;     // Write set for backward validation, containing the account numbers

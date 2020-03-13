@@ -1,5 +1,8 @@
 package Util;
 
+/**
+ * @author Krishna Chaitanya Pullela, Manoj Mallidi, Benoit Gallet
+ */
 public class Account
 {
     private int number;
