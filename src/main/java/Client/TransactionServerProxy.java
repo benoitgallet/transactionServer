@@ -5,6 +5,7 @@ package Client;
  */
 public class TransactionServerProxy
 {
+    //TODO Maybe don't have object fields relative to a transaction as they should be random in the end
     private int account1;
     private int amount;
     private int account2;
@@ -19,6 +20,7 @@ public class TransactionServerProxy
     public void performaTransaction()
     {
         //TODO Connect to the server, and perform a transaction with it through a socket, using read/write operations
+        //TODO Perform a bunch of random transactions on random accounts
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

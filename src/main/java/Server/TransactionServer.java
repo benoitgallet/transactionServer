@@ -1,14 +1,10 @@
 package Server;
 
-import Util.Account;
 import Util.Util;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.StringTokenizer;
 
 /**
  * @author Krishna Chaitanya Pullela, Manoj Mallidi, Benoit Gallet
@@ -16,13 +12,13 @@ import java.util.StringTokenizer;
 public class TransactionServer
 {
     private static ServerSocket serverSocket;
-    private static TransactionManager transactionManager;
-    private static ArrayList<Account> accountList;
+    public static TransactionManager transactionManager;
+    public static AccountManager accountManager;
 
     public TransactionServer()
     {
-        accountList = (ArrayList<Account>) Util.initializeAccounts();
         transactionManager = new TransactionManager();
+        accountManager = new AccountManager();
         serverSocket = null;
     }
 
@@ -68,8 +64,4 @@ public class TransactionServer
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    public static ArrayList<Account> getAccountList()
-    {
-        return accountList;
-    }
 }

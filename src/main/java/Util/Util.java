@@ -18,6 +18,7 @@ public class Util
     public static Collection<Account> initializeAccounts()
     {
         //TODO Eventually read a properties or xml file
+        //TODO Or just create random amount on successive accounts
         List<Account> accounts = new ArrayList<>(nbAccount);
         for (int i = 0; i < nbAccount; ++i)
         {
