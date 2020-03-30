@@ -8,13 +8,8 @@ public class Account
     private int number;
     private int amount;
 
-    public Account()
-    {
-
-    }
-
     /**
-     * Constructor to make a copy of an account and work on tentative data.
+     * Constructor to make a copy of an account, so the server can work on tentative data.
      * @param account The account to copy.
      */
     public Account(Account account)
@@ -66,6 +61,6 @@ public class Account
     @Override
     public String toString()
     {
-        return "Account{" + "number = " + number + ", amount = " + amount + '}';
+        return "Account{" + "id = " + number + ", amount = " + amount + '}';
     }
 }

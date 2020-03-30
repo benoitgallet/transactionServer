@@ -1,6 +1,7 @@
 package Server;
 
 import Util.Util;
+import Util.Account;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -25,7 +26,12 @@ public class TransactionServer
     public static void main(String[] args)
     {
         new TransactionServer();
+        displayAccounts();
+
         listenNewTransactions();
+
+//        System.out.println(logger.toString());
+        displayAccounts();
     }
 
     public static void listenNewTransactions()
@@ -39,9 +45,10 @@ public class TransactionServer
             e.printStackTrace();
         }
 
+        int nbTransactionsOpened = 0;
         if (null != serverSocket)
         {
-            while (true)
+            while (nbTransactionsOpened < Util.nbTransactions)
             {
                 Socket clientSocket = null;
                 try
@@ -56,9 +63,21 @@ public class TransactionServer
                 {
                     // Start a new transaction
                     transactionManager.newTransaction(clientSocket);
+                    nbTransactionsOpened++;
                 }
             }
         }
+    }
+
+    public static void displayAccounts()
+    {
+        long cumulativeAmount = 0;
+        for(Account account : accountManager.getAccountList())
+        {
+            System.out.println(account.toString());
+            cumulativeAmount += account.getAmount();
+        }
+        System.out.println("Cumulative amount on all accounts = " + cumulativeAmount);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

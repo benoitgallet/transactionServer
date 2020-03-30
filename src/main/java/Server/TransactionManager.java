@@ -12,21 +12,38 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TransactionManager
 {
     // As stated in the book, these operations require to be atomic
-    public static ConcurrentLinkedQueue<Pair<Integer, Integer>> writeSet;     // Write set for backward validation, containing the transaction ids and the account numbers
-    public static AtomicInteger transactionValidationId;                      // Used to attribute an id to transactions during validation
-    public static AtomicInteger transactionId;                                // Assign a unique id to the transactions
+    public static ConcurrentLinkedQueue<Pair<Integer, Integer>> readSet;        // Read set for forward validation, containing the transaction ids and the account numbers
+    public static AtomicInteger transactionId;                                  // Assign a unique id to the transactions
 
     public TransactionManager()
     {
-        writeSet = new ConcurrentLinkedQueue<>();
-        transactionValidationId = new AtomicInteger(0);
+        readSet = new ConcurrentLinkedQueue<>();
         transactionId = new AtomicInteger(0);
     }
 
+    /**
+     * Create a new worker thread that will listen for read and write operations from the client.
+     * @param clientSocket The socket connected to the client.
+     */
     public void newTransaction(Socket clientSocket)
     {
-        //TODO Start a new TransactionWorker that listens for read/write operations from the socket
+        // Start a new thread connected to a client
         new TransactionWorker(clientSocket).start();
+    }
+
+    /**
+     * Remove the read operations of transactions that are validated.
+     * @param transactionId The transaction's id whose read operations should be removed.
+     */
+    public void removeTransactions(int transactionId)
+    {
+        for(Pair<Integer, Integer> transaction : readSet)
+        {
+            if (transaction.first() == transactionId)
+            {
+                readSet.remove(transaction);
+            }
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
