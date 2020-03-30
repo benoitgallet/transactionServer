@@ -1,12 +1,13 @@
 package Client;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.Properties;
 
-import Util.*;
+import Util.Util;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.Random;
 
 /**
  * @author Krishna Chaitanya Pullela, Manoj Mallidi, Benoit Gallet
@@ -15,45 +16,47 @@ public class TransactionClient
 {
     public static void main(String[] args)
     {
-    	Util Util = new Util();
-        //TODO In a for loop iterating over Util.nbTransactions, create at each iteration a Socket
-        // Establish a connection with the server using the Socket (see Util class for the port)
-        // Create a new TransactionServerProxy thread with the Socket connected to the server
-    	
-    	
-       
-    	for (int i = 0; i < Util.nbTransactions ; i++) {
-    		
-    		try {
-    			
-    			Properties prop = readPropertiesFile("TransactionServer.properties");
-    			
-    			Socket socketToServer = new Socket(prop.getProperty("SERVER_HOST"),Util.port);
-    			
-				new Thread(new TransactionServerProxy(socketToServer)).start();
-				
+        Random rand = new Random();
+        // Create Util.nbTransactions transactions, and thus as many threads
+    	for (int i = 0; i < Util.nbTransactions ; i++)
+    	{
+    	    // Use random values for the account numbers and the transfer amount
+    	    int account1 = rand.nextInt(Util.nbAccount);
+    	    int transferAmount = rand.nextInt(Util.initialAccountAmount) + 1;
+    	    int account2;
+    	    do {
+    	        // Check that the two accounts are distinct (avoid transferring from an account to the same account)
+                account2 = rand.nextInt(Util.nbAccount);
+            } while(account1 == account2);
+
+//            System.out.println("Creating transaction " + i + ": transfering " + transferAmount + " between Accounts " + account1 + " and " + account2);
+
+    	    Socket socketToServer = null;
+    		try
+            {
+                // Connect to the server
+    			socketToServer = new Socket(InetAddress.getByName(Util.serverAddress), Util.port);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
-		}
-    }
-    
-    
-    public static Properties readPropertiesFile(String fileName) throws IOException {
-        FileInputStream fis = null;
-        Properties prop = null;
-        try {
-           fis = new FileInputStream(fileName);
-           prop = new Properties();
-           prop.load(fis);
-        } catch(FileNotFoundException fnfe) {
-           fnfe.printStackTrace();
-        } catch(IOException ioe) {
-           ioe.printStackTrace();
-        } finally {
-           fis.close();
+
+    		if (null != socketToServer)
+            {
+                try
+                {
+                    // Create a new client thread that will perform a transaction
+                    ObjectOutputStream outputStream = new ObjectOutputStream(socketToServer.getOutputStream());
+                    ObjectInputStream inputStream = new ObjectInputStream(socketToServer.getInputStream());
+                    TransactionServerProxy serverProxy = new TransactionServerProxy(inputStream, outputStream, account1, transferAmount, account2, i);
+                    serverProxy.start();
+                } catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+            } else {
+                System.out.println("Cannot connect to the server");
+            }
         }
-        return prop;
-     }
+        System.out.println("All the transactions have been launched");
+    }
 }

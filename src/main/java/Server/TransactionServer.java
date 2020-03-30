@@ -1,9 +1,12 @@
 package Server;
 
-import Util.Util;
 import Util.Account;
+import Util.Util;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -26,12 +29,9 @@ public class TransactionServer
     public static void main(String[] args)
     {
         new TransactionServer();
-        displayAccounts();
+        displayAccounts(true);
 
         listenNewTransactions();
-
-//        System.out.println(logger.toString());
-        displayAccounts();
     }
 
     public static void listenNewTransactions()
@@ -39,7 +39,7 @@ public class TransactionServer
         try
         {
             // Opens the server on localhost
-            serverSocket = new ServerSocket(Util.port);
+            serverSocket = new ServerSocket(Util.port, Util.nbTransactions, InetAddress.getByName(Util.serverAddress));
         } catch (IOException e)
         {
             e.printStackTrace();
@@ -53,6 +53,7 @@ public class TransactionServer
                 Socket clientSocket = null;
                 try
                 {
+                    // Accept new connections from clients
                     clientSocket = serverSocket.accept();
                 } catch (IOException e)
                 {
@@ -62,19 +63,35 @@ public class TransactionServer
                 if (null != clientSocket)
                 {
                     // Start a new transaction
-                    transactionManager.newTransaction(clientSocket);
+                    try
+                    {
+                        ObjectOutputStream outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
+                        ObjectInputStream inputStream = new ObjectInputStream(clientSocket.getInputStream());
+                        transactionManager.newTransaction(inputStream, outputStream);
+                    } catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
                     nbTransactionsOpened++;
                 }
             }
         }
     }
 
-    public static void displayAccounts()
+    /**
+     * Function to display the current state of all the accounts, as well as the cumulative amount of all the accounts.
+     * The detail of each account is optional.
+     * @param verbose True to display the detail of each account, false otherwise.
+     */
+    public static void displayAccounts(boolean verbose)
     {
         long cumulativeAmount = 0;
         for(Account account : accountManager.getAccountList())
         {
-            System.out.println(account.toString());
+            if (verbose)
+            {
+                System.out.println(account.toString());
+            }
             cumulativeAmount += account.getAmount();
         }
         System.out.println("Cumulative amount on all accounts = " + cumulativeAmount);

@@ -2,7 +2,8 @@ package Server;
 
 import Util.Pair;
 
-import java.net.Socket;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -21,14 +22,11 @@ public class TransactionManager
         transactionId = new AtomicInteger(0);
     }
 
-    /**
-     * Create a new worker thread that will listen for read and write operations from the client.
-     * @param clientSocket The socket connected to the client.
-     */
-    public void newTransaction(Socket clientSocket)
+    public void newTransaction(ObjectInputStream inputStream, ObjectOutputStream outputStream)
     {
-        // Start a new thread connected to a client
-        new TransactionWorker(clientSocket).start();
+        // Create a new worker thread to perform a transaction
+        TransactionWorker transactionWorker = new TransactionWorker(inputStream, outputStream);
+        transactionWorker.start();
     }
 
     /**
@@ -45,7 +43,4 @@ public class TransactionManager
             }
         }
     }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 }

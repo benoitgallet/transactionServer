@@ -4,6 +4,8 @@ package Util;
  * Generic class to work on pairs, so we do not have to use the class implemented in the javafx package.
  * @param <K> The type of the first field.
  * @param <V> The type of the second field.
+ *
+ * @author Krishna Chaitanya Pullela, Manoj Mallidi, Benoit Gallet
  */
 public class Pair<K, V>
 {

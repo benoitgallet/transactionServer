@@ -2,6 +2,9 @@ package Message;
 
 import java.io.Serializable;
 
+/**
+ * @author Krishna Chaitanya Pullela, Manoj Mallidi, Benoit Gallet
+ */
 public class Message implements Serializable
 {
     private final MessageType messageType;

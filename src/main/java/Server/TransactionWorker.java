@@ -9,7 +9,7 @@ import Util.Util;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.Socket;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 /**
@@ -17,18 +17,22 @@ import java.util.LinkedList;
  */
 public class TransactionWorker implements Runnable
 {
-    private Socket clientSocket;                // Socket to the client
     private Thread thread;                      // Worker thread for concurrency
     private StringBuilder logger;               // StringBuilder to act as a logger for the transaction
+
+    private ObjectInputStream inputStream;
+    private ObjectOutputStream outputStream;
 
     private LinkedList<Account> readSet;        // Keep track of the accounts read by the transaction
     private LinkedList<Account> writeSet;       // Keep track of the accounts written by the transaction
     private int currentTransactionId;           // Id of the active transaction, especially used during validation
 
-    public TransactionWorker(Socket clientSocket)
+    public TransactionWorker(ObjectInputStream inputStream, ObjectOutputStream outputStream)
     {
-        this.clientSocket = clientSocket;
         this.thread = null;
+        logger = new StringBuilder();
+        this.inputStream = inputStream;
+        this.outputStream = outputStream;
 
         this.readSet = new LinkedList<>();
         this.writeSet = new LinkedList<>();
@@ -36,11 +40,12 @@ public class TransactionWorker implements Runnable
 
     public void start()
     {
+        // Create and start a new thread
         if (null == this.thread)
         {
-            this.thread = new Thread(this, "thread");
+            this.thread = new Thread(this);
+            this.thread.start();
         }
-        this.thread.start();
     }
 
     /**
@@ -49,37 +54,10 @@ public class TransactionWorker implements Runnable
     @Override
     public void run()
     {
-        // Create the input stream object to read from the client
-        ObjectInputStream inputStream = null;
-        try
-        {
-            inputStream = new ObjectInputStream(clientSocket.getInputStream());
-        } catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        // Create the output stream object to write to the client
-        ObjectOutputStream outputStream = null;
-        try
-        {
-            outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
-        } catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
         // Assert that we can communicate with the client
         if (null == inputStream || null == outputStream)
         {
             System.out.println("Error creating the streams");
-            try
-            {
-                clientSocket.close();
-            } catch (IOException e)
-            {
-                e.printStackTrace();
-            }
             return;
         }
 
@@ -94,7 +72,7 @@ public class TransactionWorker implements Runnable
                 inputMessage = (Message) inputStream.readObject();
             } catch (IOException | ClassNotFoundException e)
             {
-                e.printStackTrace();
+//                e.printStackTrace();
             }
 
             if (null != inputMessage)
@@ -121,9 +99,10 @@ public class TransactionWorker implements Runnable
                         try
                         {
                             outputStream.writeObject(outputMessage);
+                            outputStream.flush();
                         } catch (IOException e)
                         {
-                            e.printStackTrace();
+//                            e.printStackTrace();
                         }
                         break;
                     }
@@ -140,9 +119,10 @@ public class TransactionWorker implements Runnable
                         try
                         {
                             outputStream.writeObject(outputMessage);
+                            outputStream.flush();
                         } catch (IOException e)
                         {
-                            e.printStackTrace();
+//                            e.printStackTrace();
                         }
                         break;
                     }
@@ -153,28 +133,30 @@ public class TransactionWorker implements Runnable
                         // If the server uses optimistic concurrency control to handle concurrent transactions
                         if (Util.optimisticLocking)
                         {
-                            // If the transaction is validated
                             if (validateTransactions())
                             {
                                 // Commit the transaction
                                 commitTransaction();
-                                logger.append("Transaction ").append(currentTransactionId).append("] has committed its changes\n");
+                                logger.append("[Transaction ").append(currentTransactionId).append("] has committed its changes\n");
 
                                 // Confirm to the client that the transaction has been validated
                                 outputMessage = new Message(MessageType.FINISH_TRANSACTION, 0);
                                 listenOperation = false;
                                 // Prints the result of this transaction
                                 System.out.println(logger.toString());
+                                TransactionServer.displayAccounts(false);
                             } else {
+//                                TransactionManager.transactionsToAbort.remove(currentTransactionId);
+                                TransactionServer.transactionManager.removeTransactions(currentTransactionId);
                                 // The transaction is not validated and is aborted
                                 // We keep the connection with the client open so they can start the transaction again
                                 logger.append("[Transaction ").append(currentTransactionId).append("] aborted its changes\n");
-
-                                // Inform the client that the transaction has been aborted so they can start it again
-                                outputMessage = new Message(MessageType.ABORT_TRANSACTION, 1);
                                 // Clear the read and write sets so the transaction can restart correctly
                                 readSet.clear();
                                 writeSet.clear();
+
+                                // Inform the client that the transaction has been aborted so they can start it again
+                                outputMessage = new Message(MessageType.ABORT_TRANSACTION, 1);
                             }
                         } else { // Not using optimistic concurrency control
                             // All the transactions are committed without any protection whatsoever
@@ -182,19 +164,21 @@ public class TransactionWorker implements Runnable
                             logger.append("[Transaction ").append(currentTransactionId).append("] has committed its changes without control\n");
 
                             // Inform the client that the transactions has been committed (or at least attempted to be, as there is no control)
+                            // Prints the result of this transaction
                             outputMessage = new Message(MessageType.FINISH_TRANSACTION, 0);
                             listenOperation = false;
-                            // Prints the result of this transaction
                             System.out.println(logger.toString());
+                            TransactionServer.displayAccounts(false);
                         }
 
                         // Effectively inform the client if the transaction was committed or aborted
                         try
                         {
                             outputStream.writeObject(outputMessage);
+                            outputStream.flush();
                         } catch (IOException e)
                         {
-                            e.printStackTrace();
+//                            e.printStackTrace();
                         }
 
                         // Close the different streams as well as the socket to the client
@@ -203,21 +187,14 @@ public class TransactionWorker implements Runnable
                             outputStream.close();
                         } catch (IOException e)
                         {
-                            e.printStackTrace();
+//                            e.printStackTrace();
                         }
                         try
                         {
                             inputStream.close();
                         } catch (IOException e)
                         {
-                            e.printStackTrace();
-                        }
-                        try
-                        {
-                            clientSocket.close();
-                        } catch (IOException e)
-                        {
-                            e.printStackTrace();
+//                            e.printStackTrace();
                         }
                         break;
                     }
@@ -262,36 +239,37 @@ public class TransactionWorker implements Runnable
     }
 
     /**
-     * Ask the AccountManager to write into memory the accounts with their updated amount.
+     * Ask the AccountManager to write into memory the write set of this transaction (i.e., the accounts with their
+     * updated amount).
      */
     public void commitTransaction()
     {
-        for(Account acc : writeSet)
-        {
-            // Updates the account into memory
-            TransactionServer.accountManager.write(acc);
-        }
+        TransactionServer.accountManager.write(writeSet);
     }
 
     /**
      * Operates a forward validation to determine if the current transaction can be committed or not.
      * @return True if the transaction can be validated, false otherwise.
      */
-    public boolean validateTransactions()
+    public synchronized boolean validateTransactions()
     {
-        // Remove this transaction read set from the active transactions read set
-        TransactionServer.transactionManager.removeTransactions(currentTransactionId);
-        for(Pair<Integer, Integer> transaction : TransactionManager.readSet)
+        // Iterate over the global read set and check if there is a conflict
+        Iterator<Pair<Integer, Integer>> it = TransactionManager.readSet.iterator();
+        while(it.hasNext())
         {
-            for(Account account : writeSet)
+            Pair<Integer, Integer> transaction = it.next();
+            for (Account account : writeSet)
             {
-                // Two transactions read and write the same account
-                if (account.getNumber() == transaction.second())
+                if (transaction.first() != currentTransactionId && transaction.second() == account.getNumber())
                 {
+                    // Another transaction overlaps, so abort this one
                     return false;
                 }
             }
         }
+
+        // Remove this transaction from the global read set
+        TransactionServer.transactionManager.removeTransactions(currentTransactionId);
         return true;
     }
 }

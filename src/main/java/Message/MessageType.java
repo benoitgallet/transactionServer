@@ -1,6 +1,11 @@
 package Message;
 
-public enum MessageType
+import java.io.Serializable;
+
+/**
+ * @author Krishna Chaitanya Pullela, Manoj Mallidi, Benoit Gallet
+ */
+public enum MessageType implements Serializable
 {
     READ_REQUEST,           // The client requests the amount of an account
     READ_RESULT,            // The server sends the amount of an account
