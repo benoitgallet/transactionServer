@@ -1,29 +1,35 @@
 package Client;
 
+import java.net.Socket;
+
 /**
  * @author Krishna Chaitanya Pullela, Manoj Mallidi, Benoit Gallet
  */
-public class TransactionServerProxy
+public class TransactionServerProxy implements Runnable
 {
-    //TODO Maybe don't have object fields relative to a transaction as they should be random in the end
-    private int account1;
-    private int amount;
-    private int account2;
+    private Socket socketToServer;
+    private Thread serverProxyThread;
 
-    public TransactionServerProxy(int account1, int amount, int account2)
+    public TransactionServerProxy(Socket socketToServer)
     {
-        this.account1 = account1;
-        this.amount = amount;
-        this.account2 = account2;
+        //TODO Constructor
     }
 
-    public void performaTransaction()
+    public void start()
     {
-        //TODO Connect to the server, and perform a transaction with it through a socket, using read/write operations
-        //TODO Perform a bunch of random transactions on random accounts
+        //TODO Create the thread
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
+    @Override
+    public void run()
+    {
+        //TODO Create the input and output streams
+        // Create random values for account 1, account 2 and the transfer amount
+        // Break down the transfer into opening a transaction, read and write operations, and closing the transaction
+        // Eventually create these functions, and cf. MessageType class to see what to send
+        // E.g.: Message openTrans = new Message(MessageType.START_TRANSACTION, 0)
+        // Include either the account number or the amount for the other steps of the transaction
+        // Listen for the result of each request (e.g.: READ_RESULT or WRITE_RESULT)
+        // When the transaction is done, leave
+    }
 }
